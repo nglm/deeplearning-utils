@@ -33,15 +33,54 @@ def identity_targets(
     # Detach the input tensor from the current computation graph and clone it
     return inputs.detach().clone()
 
+def from_batch_to_loss_supervised(
+    model: torch.nn.Module,
+    batch: torch.Tensor,
+    device: torch.device,
+    loss_fn: Callable[[torch.Tensor, torch.Tensor], torch.Tensor] = nn.CrossEntropyLoss(reduction="none"),
+):
+    inputs, targets = batch
+    inputs = inputs.to(device=device)
+    targets = targets.to(device=device)
+
+    # Get model predictions
+    outputs = model(inputs)
+
+    # Calculate the loss
+    loss = loss_fn(outputs, targets)
+
+    return loss
+
+def from_batch_to_loss_unsupervised(
+    model: torch.nn.Module,
+    batch: torch.Tensor,
+    device: torch.device,
+    loss_fn: Callable[[torch.Tensor, torch.Tensor], torch.Tensor] = nn.MSELoss(reduction="none"),
+    get_targets: Callable = identity_targets,
+):
+    inputs = batch
+    targets = get_targets(inputs)
+
+    inputs = inputs.to(device=device)
+    targets = targets.to(device=device)
+
+    # Get model predictions
+    outputs = model(inputs)
+
+    # Calculate the loss
+    loss = loss_fn(outputs, targets)
+
+    return loss
+
 def train(
     n_epochs: int,
     optimizer: torch.optim.Optimizer,
     model: torch.nn.Module,
-    loss_fn: Callable[[torch.Tensor, torch.Tensor], torch.Tensor],
     train_loader: torch.utils.data.DataLoader,
     val_loader: Optional[torch.utils.data.DataLoader] = None,
-    supervised: bool = True,
-    get_targets: Callable = identity_targets,
+    loss_fn: Callable[[torch.Tensor, torch.Tensor], torch.Tensor] = nn.MSELoss(reduction="none"),
+    from_batch_to_loss: Callable = from_batch_to_loss_supervised,
+    from_batch_to_loss_kwargs: dict = {},
     device: Optional[torch.device] = None
 ) -> List[float]:
     """
@@ -61,10 +100,10 @@ def train(
         DataLoader for the training data.
     val_loader : Optional[torch.utils.data.DataLoader], optional
         DataLoader for the validation data, by default None.
-    supervised : bool, optional
-        Indicates whether the training is supervised or unsupervised, by default True.
-    get_targets : Callable, optional
-        Function to get targets for unsupervised training, by default identity_targets.
+    from_batch_to_loss: Callable
+        Compute the loss from a given batch
+    from_batch_to_loss_kwargs: dict
+        Kwargs for the from_batch_to_loss function.
     device : Optional[torch.device], optional
         The device to perform the computations on, by default None.
 
@@ -94,21 +133,10 @@ def train(
         loss_train = 0.0
         for batch in train_loader:
 
-            # To adapt the function to both supervised and unsupervised
-            if supervised:
-                inputs, targets = batch
-            else:
-                inputs = batch
-                targets = get_targets(inputs)
-
-            inputs = inputs.to(device=device)
-            targets = targets.to(device=device)
-
-            # Get model predictions
-            outputs = model(inputs)
-
-            # Calculate and backpropagate the loss
-            loss = loss_fn(outputs, targets)
+            loss = from_batch_to_loss(
+                model, batch, device, loss_fn=loss_fn,
+                **from_batch_to_loss_kwargs
+            )
             loss.backward()
 
             # Update model weights
@@ -135,19 +163,10 @@ def train(
 
                 for batch in val_loader:
 
-                    if supervised:
-                        inputs, targets = batch
-                    else:
-                        inputs = batch
-                        targets = get_targets(inputs)
-
-                    inputs = inputs.to(device=device)
-                    targets = targets.to(device=device)
-
-                    # Get model predictions
-                    outputs = model(inputs)
-
-                    loss = loss_fn(outputs, targets)
+                    loss = from_batch_to_loss(
+                        model, batch, device, loss_fn=loss_fn,
+                        **from_batch_to_loss_kwargs
+                    )
                     loss_val += loss.sum().item()
 
             losses_val.append(float(np.mean(loss_val)))
@@ -244,8 +263,8 @@ def model_selection(
     loss_params_common: Optional[Dict[str, Any]] = {},
     performance_f: Callable = compute_accuracy,
     performance_kwargs: dict = {},
-    supervised: bool = True,
-    get_targets: Callable = identity_targets,
+    from_batch_to_loss: Callable = from_batch_to_loss_supervised,
+    from_batch_to_loss_kwargs: dict = {},
     seed: int = 611,
     res_path: str = 'model_',
     device: Optional[torch.device] = None,
@@ -283,10 +302,10 @@ def model_selection(
         Function to compute performance metrics, by default compute_accuracy.
     performance_kwargs : dict, optional
         Additional keyword arguments for the performance function, by default {}.
-    supervised : bool, optional
-        Indicates whether the training is supervised or unsupervised, by default True.
-    get_targets : Callable, optional
-        Function to get targets for unsupervised training, by default identity_targets.
+    from_batch_to_loss: Callable
+        Compute the loss from a given batch
+    from_batch_to_loss_kwargs: dict
+        Kwargs for the from_batch_to_loss function.
     seed : int, optional
         Random seed for reproducibility, by default 611.
     res_path : str, optional
@@ -388,8 +407,8 @@ def model_selection(
                         loss_fn=loss_fn,
                         train_loader=train_loader,
                         val_loader=val_loader,
-                        supervised=supervised,
-                        get_targets=get_targets,
+                        from_batch_to_loss = from_batch_to_loss,
+                        from_batch_to_loss_kwargs = from_batch_to_loss_kwargs,
                         device=device,
                     )
 
@@ -517,8 +536,8 @@ def pipeline(
     loss_params_common: Optional[Dict[str, Any]] = {},
     performance_f: Callable = compute_accuracy,
     performance_kwargs: dict = {},
-    supervised: bool = True,
-    get_targets: Callable = identity_targets,
+    from_batch_to_loss: Callable = from_batch_to_loss_supervised,
+    from_batch_to_loss_kwargs: dict = {},
     seed: int = 611,
     exp_name: str = 'pipeline',
     res_path: str = './res/',
@@ -562,10 +581,10 @@ def pipeline(
         Function to compute performance metrics, by default compute_accuracy.
     performance_kwargs : dict, optional
         Additional keyword arguments for the performance function, by default {}.
-    supervised : bool, optional
-        Indicates whether the training is supervised or unsupervised, by default True.
-    get_targets : Callable, optional
-        Function to get targets for unsupervised training, by default identity_targets.
+    from_batch_to_loss: Callable
+        Compute the loss from a given batch
+    from_batch_to_loss_kwargs: dict
+        Kwargs for the from_batch_to_loss function.
     seed : int, optional
         Random seed for reproducibility, by default 611.
     exp_name : str, optional
@@ -643,6 +662,9 @@ def pipeline(
         model_class, n_epochs, train_loader, val_loader,
         # Model-related params
         model_params=model_params, model_params_common=model_params_common,
+        # Params related to inputs/ouputs/targets of the model
+        from_batch_to_loss = from_batch_to_loss,
+        from_batch_to_loss_kwargs = from_batch_to_loss_kwargs,
         # Optimizer-related params
         optimizers=optimizers, optim_params=optim_params,
         optim_params_common=optim_params_common,
@@ -651,8 +673,6 @@ def pipeline(
         loss_params_common=loss_params_common,
         # Performance-related params
         performance_f=performance_f, performance_kwargs=performance_kwargs,
-        # Supervised or unsupervised? Getting the inputs and targets
-        supervised=supervised, get_targets=get_targets,
         # Other params
         seed=seed, res_path=f"{res_path}{subfolder}", device=device
     )
