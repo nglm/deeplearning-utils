@@ -1,4 +1,5 @@
 import torch
+import torch.nn as nn
 import numpy as np
 from typing import Optional, Callable, List, Type, Any, Dict, Tuple, Union
 
@@ -170,3 +171,52 @@ def weighted_mse_loss(
     loss = reduce_tensor(loss, reduction=reduction)
 
     return loss
+
+
+class WeightedMSELoss(nn.Module):
+
+    def __init__(
+        self,
+        use_weight: bool = False,
+        use_mask: bool = False,
+        reduction:str = 'none'
+    ):
+        super(WeightedMSELoss, self).__init__()
+        self.weight = use_weight
+        self.mask = use_mask
+        self.reduction = reduction
+
+    def forward(
+        self,
+        output: torch.Tensor,
+        target: torch.Tensor,
+        mask: torch.Tensor = None,
+        weight: torch.Tensor = None,
+    ) -> torch.Tensor:
+
+        if self.use_mask and mask is not None:
+            loss = masked_mse_loss(
+                output,
+                target,
+                mask=mask,
+                weight=weight,
+                reduction=self.reduction,
+            )
+        else:
+            if not self.use_weight:
+                weight = None
+            loss = weighted_mse_loss(
+                output,
+                target,
+                weight=weight,
+                reduction=self.reduction,
+            )
+        return loss
+
+    def name(self):
+        name = f"WSELoss"
+        if self.use_mask:
+            name += "-masked"
+        if self.use_weight:
+            name += "-weighted"
+        return name
