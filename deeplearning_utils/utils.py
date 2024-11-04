@@ -1,5 +1,7 @@
 import torch
 import json
+import subprocess
+from datetime import date, datetime
 from typing import Optional, Callable, List, Type, Any, Dict, Tuple, Union
 
 def write_json(dict_json: Dict[str, Any], fname: str) -> None:
@@ -48,6 +50,32 @@ def read_json(fname: str) -> Dict[str, Any]:
 
     # Return the loaded dictionary
     return json_object
+
+def export_env(
+    fname: str = "requirements.txt",
+    with_date: bool = True
+) -> None:
+    """
+    Exports the current Python environment's package requirements to a text file.
+
+    Parameters
+    ----------
+    fname : str, optional
+        The filename for the requirements file, by default "requirements.txt".
+    with_date : bool, optional
+        Indicates whether to append the current date to the filename, by default True.
+
+    Returns
+    -------
+    None
+    """
+
+    if with_date:
+        today = str(date.today())
+        fname = f'{fname}-{today}.txt'
+
+    with open(fname, 'w') as f:
+        subprocess.run(['pip', 'freeze'], stdout=f, text=True)
 
 def set_device(
     device: Optional[torch.device] = None

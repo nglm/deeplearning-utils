@@ -1,0 +1,16 @@
+[tool.poetry]
+name = "deeplearning-utils"
+version = "0.1.0"
+description = ""
+authors = ["Natacha, Galmiche <natacha.galmiche@uib.no>"]
+readme = "README.md"
+packages = [{include = "deeplearning_utils"}]
+
+[tool.poetry.dependencies]
+python = ">=3.9,<4.0"
+matplotlib = "^3.9.2"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

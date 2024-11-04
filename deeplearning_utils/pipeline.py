@@ -9,7 +9,7 @@ import shutil
 import json
 from typing import Optional, Callable, List, Type, Any, Dict, Tuple, Union
 
-from .utils import write_json, read_json, set_device
+from .utils import write_json, read_json, set_device, export_env
 from .metrics import compute_accuracy
 from .plots import plot_losses
 
@@ -601,9 +601,11 @@ def pipeline(
 
     # -------------- Main parameters of the experiment --------------
     print(f"Starting experience {exp_name}")
-    print(f"Path to main folder: {res_path}")
-    print(f"Path to subfolder:   {f'{res_path}{subfolder}/'}")
-    print(f"log filename:        {f'{out_fname}'}", flush=True)
+    print(f"Path to main folder:     {res_path}")
+    print(f"Path to subfolder:       {res_path}{subfolder}/")
+    print(f"log filename:            {out_fname}", flush=True)
+    print(f"environment exported to: {out_fname}-requirements.txt")
+    export_env(f"{out_fname}-requirements.txt", with_date=False)
 
     device = set_device(device)
 
