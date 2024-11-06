@@ -1,6 +1,7 @@
 import torch
 import json
 import subprocess
+import copy
 from datetime import date, datetime
 from typing import Optional, Callable, List, Type, Any, Dict, Tuple, Union
 
@@ -102,3 +103,40 @@ def set_device(
         print(f"On device {device}.")
 
     return device
+
+
+def get_params(
+    params: Union[dict, List[dict]] = {},
+    common_params: dict = {},
+    i: int = None,
+) -> dict:
+    """
+    Combines common parameters with specific parameters.
+
+    Parameters
+    ----------
+    params : Union[dict, List[dict]], optional
+        A dictionary or a list of dictionaries with specific parameters, by default {}.
+    common_params : dict, optional
+        A dictionary of common parameters to be included, by default {}.
+    i : int, optional
+        The index of the specific parameters to use if `params` is a list, by default None.
+
+    Returns
+    -------
+    dict
+        A dictionary containing the combined parameters.
+    """
+
+    # Create a copy of the common parameters to avoid modifying the original
+    full_params = copy.deepcopy(common_params)
+
+    # If params is a list, update with the specific parameters at index i
+    if type(params) == list:
+        full_params.update(params[i])
+    else:
+        # Otherwise, update with the provided dictionary
+        full_params.update(params)
+
+    # Return the combined parameters
+    return full_params
