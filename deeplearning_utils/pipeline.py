@@ -6,6 +6,7 @@ from datetime import date
 import sys, os
 import time
 import shutil
+import pickle
 import json
 from typing import Optional, Callable, List, Type, Any, Dict, Tuple, Union
 
@@ -15,6 +16,7 @@ from .utils import (
 from .plots import plot_losses
 from .eval import model_evaluation, from_batch_to_acc
 from .train import from_batch_to_loss_supervised, train
+from .utils import jsonify
 
 class Pipeline():
 
@@ -136,6 +138,7 @@ class Pipeline():
         self.test_loader = None
         self.info_data = {}
         self.out_fname = None
+        self.requirements_fname = None
         self.model_fullpaths = []
         self.i_best_model = None
 
@@ -340,8 +343,9 @@ class Pipeline():
         print(f"Path to main folder:     {self.res_path}")
         print(f"Path to subfolder:       {self.res_path}{self.subfolder}/")
         print(f"log filename:            {self.out_fname}.txt", flush=True)
-        print(f"environment exported to: {self.out_fname}-requirements.txt")
-        export_env(f"{self.out_fname}-requirements.txt", with_date=False)
+        self.requirements_fname = f"{self.out_fname}-requirements.txt"
+        print(f"environment exported to: {self.requirements_fname}")
+        export_env(f"{self.requirements_fname}", with_date=False)
 
         # Parameters that are common to all models to be trained and that then
         # "define" the experiment parameters
@@ -427,6 +431,51 @@ class Pipeline():
         dt = t_end - t_start
         print(f"\n\nTotal execution time: {dt:.2f}", flush=True)
 
+        # --------- Saving pipeline ------------
+        self.save(f"{self.out_fname}-Pipeline.pl")
+        self.save(f"{self.out_fname}-Pipeline.json")
+
         fout.close()
 
         return best_model
+
+
+    def save(
+        self,
+        filename: str = None,
+        type:str = 'pl'
+    ) -> None:
+        """
+        Save the pipeline (either as a class or a JSON file)
+
+        :param filename: filename of the saved pipeline, defaults to None
+        :type filename: str, optional
+        :param type: type of the pipeline, either as a python class (.pl)
+        or as a JSON file, defaults to 'pl'
+        :type type: str, optional
+        """
+        if filename is None:
+            filename = self.out_fname + "-Pipeline"
+        if type == 'json':
+            class_dict = jsonify(self)
+            write_json(class_dict, filename + '.json')
+        else:
+            with open(filename + '.pl', 'wb') as f:
+                pickle.dump(self, f)
+
+    def load(
+        self,
+        filename: str = None,
+        path: str = '',
+    ) -> None:
+        """
+        Load a pipeline from a Pipeline file (.pl)
+
+        :param filename: filename of the saved pipeline, defaults to None
+        :type filename: str, optional
+        :param path: path to the saved pipeline, defaults to ''
+        :type path: str, optional
+        """
+        raise NotImplementedError("pg.load not working, use pickle instead")
+        with open(path + filename, 'rb') as f:
+            self = pickle.load(f)
