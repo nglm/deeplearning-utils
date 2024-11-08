@@ -13,7 +13,7 @@ class SelfAttentionModel(nn.Module):
         num_heads: int,
         hidden_dims: List[int],
         out_dim: int,
-        activation: Callable = F.relu,
+        activation: Callable = F.leaky_relu,
         dropout_rate: Optional[float] = None,
         normalisation: bool = True,
     ):
