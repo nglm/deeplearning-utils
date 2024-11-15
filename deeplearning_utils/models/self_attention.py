@@ -42,6 +42,10 @@ class SelfAttentionModel(nn.Module):
         super(SelfAttentionModel, self).__init__()
 
         self.input_dim = input_dim
+
+        if type(hidden_dims) == int:
+            hidden_dims = [hidden_dims]
+
         self.hidden_dims = hidden_dims
         self.output_dim = out_dim
         self.activation = activation
