@@ -182,7 +182,7 @@ class Pipeline():
                         batch_loss_param = get_params(
                             self.batch_loss_params[l], self.batch_loss_params_common
                         )
-                        optimizer_class = self.optimizer[j]
+                        optimizer_class = self.optimizers[j]
 
                         full_param = {
                             "model_class": self.model_class , **model_param,
