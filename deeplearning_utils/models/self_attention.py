@@ -118,3 +118,4 @@ class SelfAttentionModel(nn.Module):
         for fc_block in self.fc_blocks:
             name += f"-{fc_block.name()}"
         name += f"-FC-{self.hidden_dims[-1]}x{self.output_dim}"
+        return name
