@@ -43,6 +43,8 @@ def split_dataset(
         If the input dataset is not a numpy array or a PyTorch tensor.
     """
 
+    total_size = len(dataset)
+
     if isinstance(dataset, np.ndarray):
         if rng is None:
             # Create a new random number generator using the seed
@@ -56,14 +58,13 @@ def split_dataset(
             torch.manual_seed(seed)
 
         # Shuffle the dataset randomly for PyTorch tensor
-        indices = torch.randperm(dataset.size(0))  # Generate random indices
+        indices = torch.randperm(total_size)  # Generate random indices
         dataset = dataset[indices]  # Shuffle the dataset
     else:
         # Raise an error if the dataset type is unsupported
         raise TypeError("Input dataset must be a numpy array or a PyTorch tensor.")
 
     # Calculate the sizes of each split
-    total_size = len(dataset)
     train_end = int(train_size * total_size)
     val_end = train_end + int(val_size * total_size)
 
