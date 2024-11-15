@@ -187,7 +187,8 @@ class Pipeline():
                         full_param = {
                             "model_class": self.model_class , **model_param,
                             "optimizer" : optimizer_class, **optim_param,
-                            "loss_fn_class" : self.loss_fn_class, **loss_param
+                            "loss_fn_class" : self.loss_fn_class, **loss_param,
+                            "batch_loss_param" : self.from_batch_to_loss, **batch_loss_param
                         }
 
                         print(" --- Current parameters --- ")
