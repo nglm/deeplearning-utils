@@ -138,8 +138,8 @@ class WeightedMSELoss(nn.Module):
         reduction:str = 'none'
     ):
         super(WeightedMSELoss, self).__init__()
-        self.weight = use_weight
-        self.mask = use_mask
+        self.use_weight = use_weight
+        self.use_mask = use_mask
         self.reduction = reduction
 
     def forward(
