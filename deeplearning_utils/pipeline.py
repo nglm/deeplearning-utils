@@ -322,7 +322,7 @@ class Pipeline():
             The best trained model selected based on validation performance.
         """
 
-        np.random.self.seed(self.seed)
+        np.random.seed(self.seed)
 
         # ResFolder/ModelClass/ModelInstance/model_name
         # Root folder for all results
@@ -375,7 +375,7 @@ class Pipeline():
         print("="*59, "\n", flush=True)
 
         # -------------- Datasets -------------
-        torch.manual_self.seed(self.seed)
+        torch.manual_seed(self.seed)
         self.train_loader = DataLoader(
             data_train, batch_size=self.batch_size, shuffle=True
         )
